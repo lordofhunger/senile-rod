@@ -287,7 +287,7 @@ RPS_CHOICES = {
     "scissors": "✂️"
 }
 
-@bot.hybrid_command(name="rps", description="Ro~~d~~ck, Paper, Scissors!")
+@bot.hybrid_command(name="rps", description="Rod̶ck, Paper, Scissors!")
 @app_commands.describe(choice="Rock, paper, or scissors - choose wisely! :grinning:")
 async def rps(ctx: commands.Context, choice: str):
     user_choice = choice.lower()
