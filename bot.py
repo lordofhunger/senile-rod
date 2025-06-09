@@ -9,6 +9,13 @@ import os
 import re
 from typing import Optional
 from dotenv import load_dotenv
+from config_data import (
+    TARGET_CHANNEL_IDS,
+    FREQUENT_CHANNEL_ID,
+    RULES_CHANNEL_ID,
+    RULE_POST_CHANNEL_IDS,
+    GOKU_GIFS
+)
 
 load_dotenv() 
 
@@ -17,33 +24,10 @@ if TOKEN is None:
     print("Error: DISCORD_BOT_TOKEN environment variable not set. Please check your .env file.")
     exit(1)
 
-TARGET_CHANNEL_IDS = [1381165170998378638, 1365712408710086737]
-FREQUENT_CHANNEL_ID = 1381210044279820318
-RULES_CHANNEL_ID = 1365712408710086737
-RULE_POST_CHANNEL_IDS = [1381295413423771740, 1164969184158044220, 1381300617984872498]
 
 intents = discord.Intents.default()
 intents.message_content = True 
 bot = commands.Bot(command_prefix=["!", ":"], intents=intents)
-
-
-GOKU_GIFS = [
-    "https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExbXhkaTRrN3ZyMGptbTBibnl2ZWFjajNhZnR6eG5nd250cGswNHU3ZyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/XKZxVL0ZdTlf1Detsh/giphy.gif",
-    "https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExYzBjZDJ4cG10MHN4dXN6OGRqbm9vNHYwdXd0Ym82aWtuNjBhZXY3MCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/YHRllqcns1yI0rtJyx/giphy.gif",
-    "https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExY282aHdvcm01dTVxdDNhNWxmcXlwMXVuYmI2dnk4dGoxaTdpY3U5eiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/nLa6JbJ0F8mzaVVBwF/giphy.gif",
-    "https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExM2Rqd3U2djFhZTQ3M3Y4azVkZ3gxcmt4ajdyY3Y0N3hqdzNnOTBiaiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/nKeq599EKJOolyCtPk/giphy.gif",
-    "https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExZ25oNWFlaml3YXp5cnA1NWVnaDY2cnp2a2hyazFiZnl5OGtwcXg0NiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/p7QeOqVc1U6X025Ql6/giphy.gif",
-    "https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExMmg3d2dteGh2a3pwcG0xeWptYXNjNWU2cWZ4c21sZHQ3cjZtZjF1YSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/vMGG0UloaTGnDodQ7z/giphy.gif",
-    "https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExYzdpaWoxY2wxZGg0dnVnZDRmcDB4a2w0NnRhZzRxdjFoYnRkMmxuOSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/eZ35MrjDyOqGSUaFFz/giphy.gif",
-    "https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExNWRkdGx4bXJvamR0d2d2M2MzbjZvYTdvbGxoN3Q5YmFmNnp2d2x1dSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/A0ZEUfAWDpqiryHM6h/giphy.gif",
-    "https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExcGdiYmZ6amY2NTUycHRmZm5mN3N2cTQ4dmRtb2VoYmxoMDljOWt3ciZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/EyDYdGCCZBnGskjnIB/giphy.gif",
-    "https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExcWRnbDZzeWpianA5YWVkZWR4NG9qdmxreXpiZ2J6M2FzYWx3ZHplZiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/PHFczETRKfPropxkka/giphy.gif",
-    "https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExZDh4aHM1dnBjYWJvZ3g5Y3c0OWl1MXkzcGg2c3ZibDM2bnA4bDZ1YiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/Z1cmg6ojCJIY9WMqso/giphy.gif",
-    "https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExMnI5ODQ5ZzJlZzhqOGk4cmtiYm4yczloNHg0eWZyM3ZmdmN6aXdlNiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/ZdwwQ8UwVxm5K5VgWU/giphy.gif",
-    "https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExajdxbHlrdTYweDRtZ2Z1MzUybDhjY3F0NGVuNGllMmM4dGU3NndobCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/Lzd0wFp65M9HkVrP2a/giphy.gif",
-    "https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExajdxbHlrdTYweDRtZ2Z1MzUybDhjY3F0NGVuNGllMmM4dGU3NndobCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/Lzd0wFp65M9HkVrP2a/giphy.gif",
-    "https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExajdxbHlrdTYweDRtZ2Z1MzUybDhjY3F0NGVuNGllMmM4dGU3NndobCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/Lzd0wFp65M9HkVrP2a/giphy.gif",
-]
 
 dune_exec_lock = asyncio.Lock()
 
