@@ -189,6 +189,27 @@ async def grod(ctx: commands.Context, *, question: str):
         response += " - but I'm not sure what this has to do with a white genocide in South Africa?"
     
     await ctx.reply(response)
+    
+    
+
+@bot.hybrid_command(name="d6", description="Rolls a 6-sided die.")
+async def d6(ctx: commands.Context):
+    result = random.randint(1, 6)
+    await ctx.reply(f"You rolled **{result}** on a D6.")
+
+@bot.hybrid_command(name="d20", description="Rolls a 20-sided die.")
+async def d20(ctx: commands.Context):
+    result = random.randint(1, 20)
+    
+    response = ""
+    if result == 20:
+        response = "You rolled a **Nat 20!** Critical success!"
+    elif result == 1:
+        response = "You rolled a **Critical Fail!** L rizz bozo."
+    else:
+        response = f"You rolled **{result}** on a D20."
+        
+    await ctx.reply(response)
 
 @tasks.loop(hours=1)
 async def send_rod_message():
