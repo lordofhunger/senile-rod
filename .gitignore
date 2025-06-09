@@ -1,5 +1,6 @@
 .env
 config_data.py
+filter_messages.py
 _build/
 messages/
 .git/
@@ -9,3 +10,4 @@ messages/
 relevant_messages.py
 dune
 dune-project
+__pycache__/
