@@ -279,6 +279,44 @@ async def winnings(ctx: commands.Context):
     response_lines.append(f"\n*Cost per spin: ${SLOT_COST_PER_SPIN}*")
 
     await ctx.reply("\n".join(response_lines))
+    
+    
+RPS_CHOICES = {
+    "rock": "🪨",
+    "paper": "📄",
+    "scissors": "✂️"
+}
+
+@bot.hybrid_command(name="rps", description="Ro~~d~~ck, Paper, Scissors!")
+@app_commands.describe(choice="Rock, paper, or scissors - choose wisely! :grinning:")
+async def rps(ctx: commands.Context, choice: str):
+    user_choice = choice.lower()
+
+    if user_choice not in RPS_CHOICES:
+        await ctx.reply("Huh? Pick `rock`, `paper`, or `scissors`.")
+        return
+
+    bot_choice_name = random.choice(list(RPS_CHOICES.keys()))
+    bot_choice_emoji = RPS_CHOICES[bot_choice_name]
+    user_choice_emoji = RPS_CHOICES[user_choice]
+
+    result_message = ""
+
+    # Determine the winner
+    if user_choice == bot_choice_name:
+        result_message = "A tie, guess you cant beat this old man ehehe :relieved:"
+    elif (user_choice == "rock" and bot_choice_name == "scissors") or \
+         (user_choice == "paper" and bot_choice_name == "rock") or \
+         (user_choice == "scissors" and bot_choice_name == "paper"):
+        result_message = "Wha? Damn youngsters playing tricks on an old man :unamused:"
+    else:
+        result_message = "L bozo :weary:"
+
+    await ctx.reply(
+        f"You chose: {user_choice_emoji} ({user_choice.capitalize()})\n"
+        f"I chose: {bot_choice_emoji} ({bot_choice_name.capitalize()})\n\n"
+        f"**{result_message}**"
+    )
 
 @tasks.loop(hours=1)
 async def send_rod_message():
