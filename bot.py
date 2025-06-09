@@ -17,16 +17,15 @@ from config_data import (
     GOKU_GIFS
 )
 
-load_dotenv() 
+load_dotenv()
 
 TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 if TOKEN is None:
     print("Error: DISCORD_BOT_TOKEN environment variable not set. Please check your .env file.")
     exit(1)
 
-
 intents = discord.Intents.default()
-intents.message_content = True 
+intents.message_content = True
 bot = commands.Bot(command_prefix=["!", ":"], intents=intents)
 
 dune_exec_lock = asyncio.Lock()
@@ -45,7 +44,7 @@ def save_rule_number(number):
     """Saves the current rule number to a JSON file."""
     with open(RULES_FILE, 'w') as f:
         json.dump({'last_rule_number': number}, f)
-        
+
 current_rule_number = load_rule_number()
 
 @bot.event
@@ -64,6 +63,15 @@ async def gen(ctx: commands.Context):
     await ctx.defer()
     output = await run_rod_gen()
     await ctx.reply(output or "No output.")
+
+    
+@bot.hybrid_command(name="invite", description="Join to get all the rod updates u could ever want or need!")
+async def invite(ctx: commands.Context):
+    """
+    Gives you a link to my community server.
+    """
+    await ctx.reply("Join rod's repo: https://discord.gg/vqD9sH79rG")
+
     
 @bot.command(name="rod_rule", description="Create a new rod rule (or generate one if no text is given).")
 async def rod_rule(ctx: commands.Context, *, rule_text: Optional[str] = None):
@@ -74,6 +82,9 @@ async def rod_rule(ctx: commands.Context, *, rule_text: Optional[str] = None):
         is_quoting = True
         try:
             replied_message = await ctx.channel.fetch_message(ctx.message.reference.message_id)
+            if replied_message.author.id == ctx.author.id:
+                await ctx.followup.send("You cannot quote your own message to create a rod rule.", ephemeral=True)
+                return
             if replied_message.content:
                 final_rule_text = replied_message.content
                 quoted_author_name = replied_message.author.display_name
@@ -88,7 +99,6 @@ async def rod_rule(ctx: commands.Context, *, rule_text: Optional[str] = None):
         except discord.HTTPException as e:
             await ctx.followup.send(f"Error fetching replied message: {e}. If no text is provided, I'll attempt to generate a rule.", ephemeral=True)
             is_quoting = False
-
     if not is_quoting and ctx.channel.id != RULES_CHANNEL_ID:
         await ctx.followup.send("Regular Rod rules (non-quotes or generated) can only be created in the designated rules channel.", ephemeral=True)
         return
@@ -99,19 +109,22 @@ async def rod_rule(ctx: commands.Context, *, rule_text: Optional[str] = None):
     generated = False
     
     if ctx.message.reference:
-     try:
-         replied_message = await ctx.channel.fetch_message(ctx.message.reference.message_id)
-         if replied_message.content:
-             final_rule_text = replied_message.content
-             quoted_author_name = replied_message.author.display_name
-             quoted_author_avatar = replied_message.author.avatar.url if replied_message.author.avatar else None
-             generated = False
-         else:
-             await ctx.followup.send("The replied message has no text content to quote.", ephemeral=True)
-     except discord.NotFound:
-         await ctx.followup.send("Could not find the replied message.", ephemeral=True)
-     except discord.HTTPException as e:
-         await ctx.followup.send(f"Error fetching replied message: {e}", ephemeral=True)
+        try:
+            replied_message = await ctx.channel.fetch_message(ctx.message.reference.message_id)
+            if replied_message.author.id == ctx.author.id:
+                await ctx.followup.send("Bro u cant just 'quote' yourself, thats not how quotes work.", ephemeral=True)
+                return
+            if replied_message.content:
+                final_rule_text = replied_message.content
+                quoted_author_name = replied_message.author.display_name
+                quoted_author_avatar = replied_message.author.avatar.url if replied_message.author.avatar else None
+                generated = False
+            else:
+                await ctx.followup.send("The replied message has no text content to quote.", ephemeral=True)
+        except discord.NotFound:
+            await ctx.followup.send("Could not find the replied message.", ephemeral=True)
+        except discord.HTTPException as e:
+            await ctx.followup.send(f"Error fetching replied message: {e}", ephemeral=True)
 
     if final_rule_text is None or not final_rule_text.strip():
         generated_text = await run_rod_gen()
@@ -125,7 +138,6 @@ async def rod_rule(ctx: commands.Context, *, rule_text: Optional[str] = None):
     global current_rule_number
     current_rule_number += 1
     save_rule_number(current_rule_number)
-
     embed = discord.Embed(
         title=f"Rule {current_rule_number}: {final_rule_text}",
         color=0xF7DC6F,
@@ -135,10 +147,10 @@ async def rod_rule(ctx: commands.Context, *, rule_text: Optional[str] = None):
     embed.set_image(url=selected_gif_url)
 
     if quoted_author_name:
-     embed.set_footer(text=f"Quoted from {quoted_author_name}", icon_url=quoted_author_avatar)
+        embed.set_footer(text=f"Quoted from {quoted_author_name}", icon_url=quoted_author_avatar)
     else:
-     footer_source = " (Generated)" if generated else ""
-     embed.set_footer(text=f"Submitted by {ctx.author.display_name}{footer_source}", icon_url=ctx.author.avatar.url)
+        footer_source = " (Generated)" if generated else ""
+        embed.set_footer(text=f"Submitted by {ctx.author.display_name}{footer_source}", icon_url=ctx.author.avatar.url)
 
     await ctx.reply("Rod rule added successfully!", ephemeral=True)
 
@@ -159,7 +171,7 @@ async def rod_rule(ctx: commands.Context, *, rule_text: Optional[str] = None):
 
     
 @bot.command(name="grod", description="Ask grod if something is real!")
-async def grod(ctx: commands.Context, *, question: str): 
+async def grod(ctx: commands.Context, *, question: str):
     normalized_question = question.strip().lower()
     seed = hash(normalized_question)
 
@@ -188,7 +200,7 @@ async def send_rod_message():
             await channel.send(output)
         else:
             print(f"Target channel with ID {channel_id} not found.")
-            
+           
 @tasks.loop(seconds=60)
 async def send_frequent_rod_message():
     output = await run_rod_gen()
@@ -216,7 +228,7 @@ async def run_rod_gen() -> str:
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE
             )
-            stdout, stderr = await process.communicate() 
+            stdout, stderr = await process.communicate()
             
             response = stdout.decode().strip()
             
@@ -230,4 +242,4 @@ async def run_rod_gen() -> str:
         except Exception as e:
             return f"Error running rod_gen.exe: {type(e).__name__} - {str(e)}"
 
-bot.run(TOKEN)
+bot.run(TOKEN) 
