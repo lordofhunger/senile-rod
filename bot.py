@@ -295,6 +295,17 @@ async def rps(ctx: commands.Context, choice: str):
     if user_choice not in RPS_CHOICES:
         await ctx.reply("Huh? Pick `rock`, `paper`, or `scissors`.")
         return
+        
+    if ctx.author.display_name == "Gon Freeccs":
+        result_message = "Wha!? Ya broke my damn tool!"
+        bot_choice_emoji = "💥"
+        await ctx.reply(
+            f"You chose: {RPS_CHOICES[user_choice]} ({user_choice.capitalize()})\n"
+            f"senile rod's choice exploded! {bot_choice_emoji}\n\n"
+            f"**{result_message}**"
+        )
+        return
+
 
     bot_choice_name = random.choice(list(RPS_CHOICES.keys()))
     bot_choice_emoji = RPS_CHOICES[bot_choice_name]
