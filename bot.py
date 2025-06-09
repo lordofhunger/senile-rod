@@ -184,6 +184,9 @@ async def grod(ctx: commands.Context, *, question: str):
     else:
         negative_responses = ["no", "nuh-uh", "nahh", "not real :x:"]
         response = rng.choice(negative_responses)
+
+    if rng.random() < 0.10:
+        response += " - but I'm not sure what this has to do with a white genocide in South Africa?"
     
     await ctx.reply(response)
 
