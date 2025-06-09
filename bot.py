@@ -65,13 +65,6 @@ async def gen(ctx: commands.Context):
     output = await run_rod_gen()
     await ctx.reply(output or "No output.")
     
-@bot.hybrid_command(name="invite", description="Join to get all the rod updates u could ever want or need!")
-async def invite(ctx: commands.Context):
-    """
-    Gives you a link to my community server.
-    """
-    await ctx.reply("Join rod's repo: https://discord.gg/vqD9sH79rG")
-    
 @bot.command(name="rod_rule", description="Create a new rod rule (or generate one if no text is given).")
 async def rod_rule(ctx: commands.Context, *, rule_text: Optional[str] = None):
     await ctx.defer(ephemeral=True)
@@ -81,9 +74,6 @@ async def rod_rule(ctx: commands.Context, *, rule_text: Optional[str] = None):
         is_quoting = True
         try:
             replied_message = await ctx.channel.fetch_message(ctx.message.reference.message_id)
-            if replied_message.author.id == ctx.author.id:
-                await ctx.followup.send("You cannot quote your own message to create a rod rule.", ephemeral=True)
-                return
             if replied_message.content:
                 final_rule_text = replied_message.content
                 quoted_author_name = replied_message.author.display_name
@@ -109,22 +99,19 @@ async def rod_rule(ctx: commands.Context, *, rule_text: Optional[str] = None):
     generated = False
     
     if ctx.message.reference:
-        try:
-            replied_message = await ctx.channel.fetch_message(ctx.message.reference.message_id)
-            if replied_message.author.id == ctx.author.id:
-                await ctx.followup.send("Bro u cant just 'quote' yourself, thats not how quotes work.", ephemeral=True)
-                return
-            if replied_message.content:
-                final_rule_text = replied_message.content
-                quoted_author_name = replied_message.author.display_name
-                quoted_author_avatar = replied_message.author.avatar.url if replied_message.author.avatar else None
-                generated = False
-            else:
-                await ctx.followup.send("The replied message has no text content to quote.", ephemeral=True)
-        except discord.NotFound:
-            await ctx.followup.send("Could not find the replied message.", ephemeral=True)
-        except discord.HTTPException as e:
-            await ctx.followup.send(f"Error fetching replied message: {e}", ephemeral=True)
+     try:
+         replied_message = await ctx.channel.fetch_message(ctx.message.reference.message_id)
+         if replied_message.content:
+             final_rule_text = replied_message.content
+             quoted_author_name = replied_message.author.display_name
+             quoted_author_avatar = replied_message.author.avatar.url if replied_message.author.avatar else None
+             generated = False
+         else:
+             await ctx.followup.send("The replied message has no text content to quote.", ephemeral=True)
+     except discord.NotFound:
+         await ctx.followup.send("Could not find the replied message.", ephemeral=True)
+     except discord.HTTPException as e:
+         await ctx.followup.send(f"Error fetching replied message: {e}", ephemeral=True)
 
     if final_rule_text is None or not final_rule_text.strip():
         generated_text = await run_rod_gen()
@@ -148,10 +135,10 @@ async def rod_rule(ctx: commands.Context, *, rule_text: Optional[str] = None):
     embed.set_image(url=selected_gif_url)
 
     if quoted_author_name:
-        embed.set_footer(text=f"Quoted from {quoted_author_name}", icon_url=quoted_author_avatar)
+     embed.set_footer(text=f"Quoted from {quoted_author_name}", icon_url=quoted_author_avatar)
     else:
-        footer_source = " (Generated)" if generated else ""
-        embed.set_footer(text=f"Submitted by {ctx.author.display_name}{footer_source}", icon_url=ctx.author.avatar.url)
+     footer_source = " (Generated)" if generated else ""
+     embed.set_footer(text=f"Submitted by {ctx.author.display_name}{footer_source}", icon_url=ctx.author.avatar.url)
 
     await ctx.reply("Rod rule added successfully!", ephemeral=True)
 
