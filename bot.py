@@ -47,6 +47,22 @@ def save_rule_number(number):
 
 current_rule_number = load_rule_number()
 
+
+SLOT_EMOJIS = ["🍒", "🔔", "⭐", "💎", "💰", "7️⃣", "BAR"] 
+SLOT_WEIGHTS = [800, 150, 80, 40, 20, 10, 100] 
+
+
+SLOT_PAYOUTS = {
+    "7️⃣": 5000,
+    "💰": 1000,
+    "💎": 500,
+    "BAR": 75,
+    "⭐": 100,
+    "🔔": 50,
+    "🍒": 10
+}
+SLOT_COST_PER_SPIN = 5
+
 @bot.event
 async def on_ready():
     print(f"Logged in as {bot.user} (ID: {bot.user.id})")
@@ -210,6 +226,59 @@ async def d20(ctx: commands.Context):
         response = f"You rolled **{result}** on a D20."
         
     await ctx.reply(response)
+
+@bot.hybrid_command(name="gamble", description="Try your luck with the slot machine!")
+async def gamble(ctx: commands.Context):
+    results = random.choices(SLOT_EMOJIS, weights=SLOT_WEIGHTS, k=3)
+    reel1, reel2, reel3 = results[0], results[1], results[2]
+    slot_display = f"**[ {reel1} | {reel2} | {reel3} ]**"
+    
+    payout = 0
+    message = ""
+
+    if reel1 == reel2 == reel3:
+        payout = SLOT_PAYOUTS.get(reel1, 0)
+
+        if reel1 == "7️⃣":
+            message = f"**🎰 TRIPLE SEVEN JACKPOT! You won ${payout}!**"
+        elif reel1 == "💰":
+            message = f"**💸 MONEY BAG MADNESS! You won ${payout}!**"
+        elif reel1 == "💎":
+            message = f"**💎 DIAMOND DELIGHT! You won ${payout}! **"
+        elif reel1 == "⭐":
+            message = f"**⭐ STARBURST! You won ${payout}!**"
+        elif reel1 == "🔔":
+            message = f"**🔔 RING-A-DING-DING! You won ${payout}!**"
+        elif reel1 == "BAR":
+            message = f"**📊 BAR BONANZA! You won ${payout}!**"
+        else: # "🍒"
+            message = f"**🍒🍒🍒 Cherry Jackpot! You won ${payout}!**"
+    elif (reel1 == reel2 and reel1 != reel3) or \
+         (reel1 == reel3 and reel1 != reel2) or \
+         (reel2 == reel3 and reel2 != reel1):
+        payout = 0 
+        message = "**Almost! Try again!**"
+    else: 
+        payout = 0
+        message = "**Better luck next time! No wins this spin.**"
+
+    await ctx.reply(f"{slot_display}\n\n{message}")
+    
+@bot.hybrid_command(name="winnings", description="Shows the payouts for each triple combination.")
+async def winnings(ctx: commands.Context):
+    winnings_list = []
+    for emoji, payout in SLOT_PAYOUTS.items():
+        winnings_list.append((payout, emoji))
+
+    winnings_list.sort(key=lambda x: x[0], reverse=True)
+
+    response_lines = ["**--- Triple Jackpot Payouts ---**"]
+    for payout, emoji in winnings_list:
+        response_lines.append(f"[ {emoji} | {emoji} | {emoji} ] - **${payout}**")
+
+    response_lines.append(f"\n*Cost per spin: ${SLOT_COST_PER_SPIN}*")
+
+    await ctx.reply("\n".join(response_lines))
 
 @tasks.loop(hours=1)
 async def send_rod_message():
