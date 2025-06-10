@@ -313,7 +313,6 @@ async def rps(ctx: commands.Context, choice: str):
 
     result_message = ""
 
-    # Determine the winner
     if user_choice == bot_choice_name:
         result_message = "A tie, guess you cant beat this old man ehehe :relieved:"
     elif (user_choice == "rock" and bot_choice_name == "scissors") or \
@@ -326,6 +325,50 @@ async def rps(ctx: commands.Context, choice: str):
     await ctx.reply(
         f"You chose: {user_choice_emoji} ({user_choice.capitalize()})\n"
         f"I chose: {bot_choice_emoji} ({bot_choice_name.capitalize()})\n\n"
+        f"**{result_message}**"
+    )
+    
+
+
+OP_RPS_CHOICES = {
+    "ishi": {"emoji": "🪨", "full_name": "Ishi Ishi no Mi"},
+    "mori": {"emoji": "🌳", "full_name": "Mori Mori no Mi"},
+    "supa": {"emoji": "🔪", "full_name": "Supa Supa no Mi"}
+}
+
+@bot.hybrid_command(name="op_rps", description="One Piece Rock, Paper, Scissors!")
+@app_commands.describe(choice="Ishi (Rock), Mori ('Paper'), or Supa ('Scissors') - choose wisely!")
+async def op_rps(ctx: commands.Context, choice: str):
+    user_choice = choice.lower()
+
+    if user_choice not in OP_RPS_CHOICES:
+        await ctx.reply("Yeah yeah real pirates don't follow rules! But for this game, pick `ishi`, `mori`, or `supa`.")
+        return
+
+    bot_choice_name = random.choice(list(OP_RPS_CHOICES.keys()))
+
+    user_choice_info = OP_RPS_CHOICES[user_choice]
+    bot_choice_info = OP_RPS_CHOICES[bot_choice_name]
+
+    user_choice_emoji = user_choice_info["emoji"]
+    user_choice_full_name = user_choice_info["full_name"]
+    bot_choice_emoji = bot_choice_info["emoji"]
+    bot_choice_full_name = bot_choice_info["full_name"]
+
+    result_message = ""
+
+    if user_choice == bot_choice_name:
+        result_message = "A tie! Looks like you can't beat this old man, wahwahwahwah :laughing:"
+    elif (user_choice == "ishi" and bot_choice_name == "supa") or \
+         (user_choice == "mori" and bot_choice_name == "ishi") or \
+         (user_choice == "supa" and bot_choice_name == "mori"):
+        result_message = "Wha? You younguns playing tricks on an old man, when I was in my prime roger was still a rookie! :unamused:"
+    else:
+        result_message = "L bozo! My Devil Fruit power is superior! wahwahwahwah :laughing:"
+
+    await ctx.reply(
+        f"You chose: {user_choice_emoji} ({user_choice_full_name})\n"
+        f"I chose: {bot_choice_emoji} ({bot_choice_full_name})\n\n"
         f"**{result_message}**"
     )
 
