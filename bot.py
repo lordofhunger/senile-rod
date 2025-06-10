@@ -31,6 +31,7 @@ bot = commands.Bot(command_prefix=["!", ":"], intents=intents)
 dune_exec_lock = asyncio.Lock()
 
 RULES_FILE = 'rules_data.json'
+SHIROBOBS_FLEET_FILE = 'shirobobs_fleet.txt'
 
 def load_rule_number():
     """Loads the last rule number from a JSON file."""
@@ -87,7 +88,27 @@ async def invite(ctx: commands.Context):
     Gives you a link to my community server.
     """
     await ctx.reply("Join rod's repo: https://discord.gg/vqD9sH79rG")
-
+    
+    
+#patreon.com/user?u=20322607    
+@bot.hybrid_command(name="patreon", description="Sponsor rod, ill probably buy posters with this money?")
+async def invite(ctx: commands.Context):
+    """
+    Gives you a link to my Patreon, I don't know why you want that.
+    """
+    await ctx.reply("Really? Okay: https://patreon.com/user?u=20322607")
+    
+@bot.hybrid_command(name="patreon-features", description="What features does rod's patreon come with?")
+async def patreon_features(ctx: commands.Context):
+    """
+    Lists the "features" of Rod's Patreon.
+    """
+    output_message = (
+        "Purchasing rod's patreon comes with many fun features, including but not limited to:\n"
+        "- loss of money\n"
+        "- regret"
+    )
+    await ctx.reply(output_message)
     
 @bot.command(name="rod_rule", description="Create a new rod rule (or generate one if no text is given).")
 async def rod_rule(ctx: commands.Context, *, rule_text: Optional[str] = None):
@@ -371,6 +392,27 @@ async def op_rps(ctx: commands.Context, choice: str):
         f"I chose: {bot_choice_emoji} ({bot_choice_full_name})\n\n"
         f"**{result_message}**"
     )
+    
+@bot.command(name="shirobobs-fleet", description="Shows the current and former members of ShiroBob's fleet.")
+async def shirobobs_fleet(ctx: commands.Context):
+    """
+    Displays the content of the local file containing ShiroBob's fleet members.
+    This is now a ! command only.
+    """
+    try:
+        with open(SHIROBOBS_FLEET_FILE, 'r', encoding='utf-8') as f:
+            fleet_content = f.read()
+
+        response_text = f"```\n{fleet_content}\n```"
+        
+        await ctx.send(response_text)
+
+    except FileNotFoundError:
+        error_message = "Uhh its quite cloudy right now I can't see who is in the fleet!"
+        await ctx.send(error_message)
+    except Exception as e:
+        error_message = f"An error occurred while reading the fleet roster: {e}"
+        await ctx.send(error_message)
 
 @tasks.loop(hours=1)
 async def send_rod_message():
