@@ -398,14 +398,14 @@ async def op_rps(ctx: commands.Context, choice: str):
         f"**{result_message}**"
     )
     
-@bot.command(name="shirobobs-fleet", description="Shows the current and former members of ShiroBob's fleet.")
+@bot.hybrid_command(name="shirobobs-fleet", description="Shows the current and former members of ShiroBob's fleet.")
 async def shirobobs_fleet(ctx: commands.Context):
     """
     Displays the combined content of current and former fleet members.
-    This is a ! command only.
+    Works both as a slash and a prefix command.
     """
-    current_members_content = ""
-    former_members_content = ""
+    if ctx.interaction:
+        await ctx.interaction.response.defer()
 
     try:
         with open(CURRENT_FLEET_FILE, 'r', encoding='utf-8') as f:
@@ -424,14 +424,24 @@ async def shirobobs_fleet(ctx: commands.Context):
 
         response_text = f"```\n{full_fleet_content}\n```"
 
-        await ctx.send(response_text)
+        if ctx.interaction:
+            await ctx.interaction.followup.send(response_text)
+        else:
+            await ctx.send(response_text)
 
     except FileNotFoundError as e:
         error_message = f"Uhh I can't find one of the fleet roster files! ({e.filename})"
-        await ctx.send(error_message)
+        if ctx.interaction:
+            await ctx.interaction.followup.send(error_message)
+        else:
+            await ctx.send(error_message)
+
     except Exception as e:
         error_message = f"An unexpected error occurred while reading the fleet roster: {e}"
-        await ctx.send(error_message)
+        if ctx.interaction:
+            await ctx.interaction.followup.send(error_message)
+        else:
+            await ctx.send(error_message)
         
 def _count_fleet_members() -> int:
     """
