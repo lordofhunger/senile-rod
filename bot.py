@@ -31,7 +31,8 @@ bot = commands.Bot(command_prefix=["!", ":"], intents=intents)
 dune_exec_lock = asyncio.Lock()
 
 RULES_FILE = 'rules_data.json'
-SHIROBOBS_FLEET_FILE = 'shirobobs_fleet.txt'
+CURRENT_FLEET_FILE = 'fleet-members.txt'
+FORMER_FLEET_FILE = 'former-fleet-members.txt'
 
 def load_rule_number():
     """Loads the last rule number from a JSON file."""
@@ -63,6 +64,10 @@ SLOT_PAYOUTS = {
     "🍒": 10
 }
 SLOT_COST_PER_SPIN = 5
+
+TOP_BANNER = "-------------------[ShiroBob's fleet]--------------------"
+MID_BANNER = "-------------------[Former Members]----------------------"
+BOTTOM_BANNER = "---------------------------------------------------------"
 
 @bot.event
 async def on_ready():
@@ -396,24 +401,82 @@ async def op_rps(ctx: commands.Context, choice: str):
 @bot.command(name="shirobobs-fleet", description="Shows the current and former members of ShiroBob's fleet.")
 async def shirobobs_fleet(ctx: commands.Context):
     """
-    Displays the content of the local file containing ShiroBob's fleet members.
-    This is now a ! command only.
+    Displays the combined content of current and former fleet members.
+    This is a ! command only.
     """
-    try:
-        with open(SHIROBOBS_FLEET_FILE, 'r', encoding='utf-8') as f:
-            fleet_content = f.read()
+    current_members_content = ""
+    former_members_content = ""
 
-        response_text = f"```\n{fleet_content}\n```"
-        
+    try:
+        with open(CURRENT_FLEET_FILE, 'r', encoding='utf-8') as f:
+            current_members_content = f.read()
+
+        with open(FORMER_FLEET_FILE, 'r', encoding='utf-8') as f:
+            former_members_content = f.read()
+
+        full_fleet_content = (
+            f"{TOP_BANNER}\n"
+            f"{current_members_content.strip()}\n"
+            f"{MID_BANNER}\n"
+            f"{former_members_content.strip()}\n"
+            f"{BOTTOM_BANNER}"
+        )
+
+        response_text = f"```\n{full_fleet_content}\n```"
+
         await ctx.send(response_text)
 
-    except FileNotFoundError:
-        error_message = "Uhh its quite cloudy right now I can't see who is in the fleet!"
+    except FileNotFoundError as e:
+        error_message = f"Uhh I can't find one of the fleet roster files! ({e.filename})"
         await ctx.send(error_message)
     except Exception as e:
-        error_message = f"An error occurred while reading the fleet roster: {e}"
+        error_message = f"An unexpected error occurred while reading the fleet roster: {e}"
         await ctx.send(error_message)
+        
+def _count_fleet_members() -> int:
+    """
+    Counts the number of current fleet members.
+    """
+    num_members = 0
+    try:
+        with open(CURRENT_FLEET_FILE, 'r', encoding='utf-8') as f:
+            for line in f:
+                stripped_line = line.strip()
+                if stripped_line and not stripped_line.startswith('-'):
+                    num_members += 1
+    except FileNotFoundError:
+        print(f"Fleet members file not found at {CURRENT_FLEET_FILE}.")
+        return 0
+    except Exception as e:
+        print(f"ERROR: An error occurred while counting fleet members: {e}")
+        return 0
+    return num_members
+    
+@bot.hybrid_command(name="crew_size", description="Reports the current number of members in ShiroBob's fleet.")
+async def crew_size(ctx: commands.Context):
+    """
+    Counts and reports the number of current fleet members.
+    """
+    if ctx.interaction:
+        await ctx.interaction.response.defer()
 
+    try:
+        num_members = _count_fleet_members()
+
+        response_message = f"ShiroBob's fleet currently has **{num_members}** members."
+
+        if ctx.interaction:
+            await ctx.interaction.followup.send(response_message)
+        else:
+            await ctx.send(response_message)
+
+    except Exception as e:
+        error_message = f"An error occurred while getting the crew size: {e}"
+        if ctx.interaction:
+            await ctx.interaction.followup.send(error_message)
+        else:
+            await ctx.send(error_message)
+    
 @tasks.loop(hours=1)
 async def send_rod_message():
     output = await run_rod_gen()
