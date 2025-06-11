@@ -1,0 +1,3 @@
+(executables
+ (names rod_gen)
+ (libraries yojson str unix))

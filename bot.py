@@ -30,9 +30,9 @@ bot = commands.Bot(command_prefix=["!", ":"], intents=intents)  # our prefixes a
 
 dune_exec_lock = asyncio.Lock() # this is a 'lock', it ensures that certain procedures are used one at a time, e.g. you cant use a procedure before someone else is finished
 
-RULES_FILE = 'rules_data.json'                   # amount of made rules are stored here
-CURRENT_FLEET_FILE = 'fleet-members.txt'         # fleet members of shirobobs-fleet are stored here
-FORMER_FLEET_FILE = 'former-fleet-members.txt'   # former fleet members are stored here
+RULES_FILE = 'json-files/rules_data.json'                   # amount of made rules are stored here
+CURRENT_FLEET_FILE = 'text-files/fleet-members.txt'         # fleet members of shirobobs-fleet are stored here
+FORMER_FLEET_FILE = 'text-files/former-fleet-members.txt'   # former fleet members are stored here
 
 def load_rule_number():
     """Procedure to get the amount of existing rod_rules"""
@@ -225,6 +225,7 @@ async def rod_rule(ctx: commands.Context, *, rule_text: Optional[str] = None):
 
     
 @bot.command(name="grod", description="Ask grod if something is real!")
+async def grod(ctx: commands.Context, *, question: str):
     """
     A play on Elon Musks 'Grok' twitter bot, where users can ask Grok if something is 'real' or not.
     Grod (Grok-rod), will reply randomly, but deterministic, on whether the question is true or not.
@@ -232,7 +233,6 @@ async def rod_rule(ctx: commands.Context, *, rule_text: Optional[str] = None):
     the question has to do with a 'white genocide' in South Africa. 
     (https://www.theguardian.com/technology/2025/may/14/elon-musk-grok-white-genocide)
     """
-async def grod(ctx: commands.Context, *, question: str):
     normalized_question = question.strip().lower()
     seed = hash(normalized_question)
 
@@ -254,18 +254,18 @@ async def grod(ctx: commands.Context, *, question: str):
     
 
 @bot.hybrid_command(name="d6", description="Rolls a 6-sided die.")
+async def d6(ctx: commands.Context):
     """
     This procedure simulates rolling a six-sided die.
     """
-async def d6(ctx: commands.Context):
     result = random.randint(1, 6)
     await ctx.reply(f"You rolled **{result}** on a D6.")
 
 @bot.hybrid_command(name="d20", description="Rolls a 20-sided die.")
+async def d20(ctx: commands.Context):
     """
     This procedure simulates rolling a twenty-sided die.
     """
-async def d20(ctx: commands.Context):
     result = random.randint(1, 20)
     
     response = ""
@@ -279,10 +279,10 @@ async def d20(ctx: commands.Context):
     await ctx.reply(response)
 
 @bot.hybrid_command(name="gamble", description="Try your luck with the slot machine!")
+async def gamble(ctx: commands.Context):
     """
     This procedure simulates a slot machine, rod enterprises does not endorse gambling.
     """
-async def gamble(ctx: commands.Context):
     results = random.choices(SLOT_EMOJIS, weights=SLOT_WEIGHTS, k=3)
     reel1, reel2, reel3 = results[0], results[1], results[2]
     slot_display = f"**[ {reel1} | {reel2} | {reel3} ]**"
@@ -319,10 +319,10 @@ async def gamble(ctx: commands.Context):
     await ctx.reply(f"{slot_display}\n\n{message}")
     
 @bot.hybrid_command(name="winnings", description="Shows the payouts for each triple combination.")
+async def winnings(ctx: commands.Context):
     """
     This procedure shows the 'winnings' that can be made from the slot machine.
     """
-async def winnings(ctx: commands.Context):
     winnings_list = []
     for emoji, payout in SLOT_PAYOUTS.items():
         winnings_list.append((payout, emoji))
@@ -346,10 +346,10 @@ RPS_CHOICES = {
 
 @bot.hybrid_command(name="rps", description="Rod̶ck, Paper, Scissors!")
 @app_commands.describe(choice="Rock, paper, or scissors - choose wisely! :grinning:")
+async def rps(ctx: commands.Context, choice: str):
     """
     This procedure simulates playing rock, paper, scissors with senile rod.
     """
-async def rps(ctx: commands.Context, choice: str):
     user_choice = choice.lower()
 
     if user_choice not in RPS_CHOICES:
@@ -398,10 +398,10 @@ OP_RPS_CHOICES = {
 
 @bot.hybrid_command(name="op_rps", description="One Piece Rock, Paper, Scissors!")
 @app_commands.describe(choice="Ishi (Rock), Mori ('Paper'), or Supa ('Scissors') - choose wisely!")
+async def op_rps(ctx: commands.Context, choice: str):
     """
     This procedure simulates playing a one-piece themed rock, paper, scissors game with senile rod.
     """
-async def op_rps(ctx: commands.Context, choice: str):
     user_choice = choice.lower()
 
     if user_choice not in OP_RPS_CHOICES:
