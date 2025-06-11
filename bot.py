@@ -10,32 +10,32 @@ import re
 from typing import Optional
 from dotenv import load_dotenv
 from config_data import (
-    TARGET_CHANNEL_IDS,
-    FREQUENT_CHANNEL_ID,
-    RULES_CHANNEL_ID,
-    RULE_POST_CHANNEL_IDS,
-    GOKU_GIFS
+    TARGET_CHANNEL_IDS,    #IDs where generated rod quotes are posted
+    FREQUENT_CHANNEL_ID,   #ID of the channel where generated rod quotes get posted once a minute
+    RULES_CHANNEL_ID,      #ID of the channel where rod_rules can be made
+    RULE_POST_CHANNEL_IDS, #ID of the channels where rod_rules are posted
+    RULE_GIFS              #GIFs utilised in rod_rules
 )
 
-load_dotenv()
+load_dotenv() #loading of the .env file, which is where the bot token is stored
 
-TOKEN = os.getenv("DISCORD_BOT_TOKEN")
+TOKEN = os.getenv("DISCORD_BOT_TOKEN") # getting the token
 if TOKEN is None:
     print("Error: DISCORD_BOT_TOKEN environment variable not set. Please check your .env file.")
     exit(1)
 
 intents = discord.Intents.default()
-intents.message_content = True
-bot = commands.Bot(command_prefix=["!", ":"], intents=intents)
+intents.message_content = True                                  # we want to see the content of messages (e.g. for rod_rules)
+bot = commands.Bot(command_prefix=["!", ":"], intents=intents)  # our prefixes are ! and :
 
-dune_exec_lock = asyncio.Lock()
+dune_exec_lock = asyncio.Lock() # this is a 'lock', it ensures that certain procedures are used one at a time, e.g. you cant use a procedure before someone else is finished
 
-RULES_FILE = 'rules_data.json'
-CURRENT_FLEET_FILE = 'fleet-members.txt'
-FORMER_FLEET_FILE = 'former-fleet-members.txt'
+RULES_FILE = 'rules_data.json'                   # amount of made rules are stored here
+CURRENT_FLEET_FILE = 'fleet-members.txt'         # fleet members of shirobobs-fleet are stored here
+FORMER_FLEET_FILE = 'former-fleet-members.txt'   # former fleet members are stored here
 
 def load_rule_number():
-    """Loads the last rule number from a JSON file."""
+    """Procedure to get the amount of existing rod_rules"""
     if os.path.exists(RULES_FILE):
         with open(RULES_FILE, 'r') as f:
             data = json.load(f)
@@ -43,18 +43,18 @@ def load_rule_number():
     return 0
 
 def save_rule_number(number):
-    """Saves the current rule number to a JSON file."""
+    """Procedure to set the new amount of existing rod_rules."""
     with open(RULES_FILE, 'w') as f:
         json.dump({'last_rule_number': number}, f)
 
-current_rule_number = load_rule_number()
+current_rule_number = load_rule_number() # get the current rule nr
 
 
-SLOT_EMOJIS = ["🍒", "🔔", "⭐", "💎", "💰", "7️⃣", "BAR"] 
-SLOT_WEIGHTS = [800, 150, 80, 40, 20, 10, 100] 
+SLOT_EMOJIS = ["🍒", "🔔", "⭐", "💎", "💰", "7️⃣", "BAR"]  # emojis used as options in our slot machine
+SLOT_WEIGHTS = [800, 150, 80, 40, 20, 10, 100]             # their weights, i.e. how likely are they to appear
 
-
-SLOT_PAYOUTS = {
+# the slot payouts, necessary for showing what you won and for the winnings command
+SLOT_PAYOUTS = { 
     "7️⃣": 5000,
     "💰": 1000,
     "💎": 500,
@@ -63,12 +63,14 @@ SLOT_PAYOUTS = {
     "🔔": 50,
     "🍒": 10
 }
-SLOT_COST_PER_SPIN = 5
+SLOT_COST_PER_SPIN = 5 # 'price' for a spin of the slot machine
 
+# decorations for showing the fleet members
 TOP_BANNER = "-------------------[ShiroBob's fleet]--------------------"
 MID_BANNER = "-------------------[Former Members]----------------------"
 BOTTOM_BANNER = "---------------------------------------------------------"
 
+# main loop
 @bot.event
 async def on_ready():
     print(f"Logged in as {bot.user} (ID: {bot.user.id})")
@@ -80,8 +82,12 @@ async def on_ready():
     send_rod_message.start()
     send_frequent_rod_message.start()
 
-@bot.hybrid_command(name="gen", description="generate a message like rod")
+
+@bot.hybrid_command(name="gen", description="Generate a message like rod")
 async def gen(ctx: commands.Context):
+    """
+    Generates a message from rod's discord messages.
+    """
     await ctx.defer()
     output = await run_rod_gen()
     await ctx.reply(output or "No output.")
@@ -90,23 +96,23 @@ async def gen(ctx: commands.Context):
 @bot.hybrid_command(name="invite", description="Join to get all the rod updates u could ever want or need!")
 async def invite(ctx: commands.Context):
     """
-    Gives you a link to my community server.
+    Gives you a link to the rod's repo community server.
     """
     await ctx.reply("Join rod's repo: https://discord.gg/vqD9sH79rG")
     
     
 #patreon.com/user?u=20322607    
-@bot.hybrid_command(name="patreon", description="Sponsor rod, ill probably buy posters with this money?")
+@bot.hybrid_command(name="patreon", description="Sponsor rod, he'll probably buy posters with this money?")
 async def invite(ctx: commands.Context):
     """
-    Gives you a link to my Patreon, I don't know why you want that.
+    Gives you a link to my Patreon, I don't know why you would want that.
     """
     await ctx.reply("Really? Okay: https://patreon.com/user?u=20322607")
     
 @bot.hybrid_command(name="patreon-features", description="What features does rod's patreon come with?")
 async def patreon_features(ctx: commands.Context):
     """
-    Lists the "features" of Rod's Patreon.
+    Lists the "features" of rod's Patreon.
     """
     output_message = (
         "Purchasing rod's patreon comes with many fun features, including but not limited to:\n"
@@ -117,6 +123,12 @@ async def patreon_features(ctx: commands.Context):
     
 @bot.command(name="rod_rule", description="Create a new rod rule (or generate one if no text is given).")
 async def rod_rule(ctx: commands.Context, *, rule_text: Optional[str] = None):
+    """
+    Meant to add a new "rod rule", this is a feature based on one by discord user umbra_unbound, or Hephy, called 'Goku rules'.
+    Goku rules contain a gif of Goku and a text stating Rule <nr>: <text of rule>, which is meant as a humorous take on 'Discord server rules'.
+    In contrast, rod rules either contain an auto-generated message, a given message or a quoted one, and a gif defined in RULE_GIFS.
+    As a nod to Hephy, 'real' rod rules can only be made in the #general channel of his Discord server.
+    """
     await ctx.defer(ephemeral=True)
 
     is_quoting = False
@@ -125,7 +137,7 @@ async def rod_rule(ctx: commands.Context, *, rule_text: Optional[str] = None):
         try:
             replied_message = await ctx.channel.fetch_message(ctx.message.reference.message_id)
             if replied_message.author.id == ctx.author.id:
-                await ctx.followup.send("You cannot quote your own message to create a rod rule.", ephemeral=True)
+                await ctx.followup.send("'You cannot quote your own message, thats not how quotes work.' -rod", ephemeral=True)
                 return
             if replied_message.content:
                 final_rule_text = replied_message.content
@@ -133,16 +145,16 @@ async def rod_rule(ctx: commands.Context, *, rule_text: Optional[str] = None):
                 quoted_author_avatar = replied_message.author.avatar.url if replied_message.author.avatar else None
                 generated = False
             else:
-                await ctx.followup.send("The replied message has no text content to quote. If no text is provided, I'll attempt to generate a rule.", ephemeral=True)
+                await ctx.followup.send("I can't quote this messages content, and will provide my own.", ephemeral=True)
                 is_quoting = False
         except discord.NotFound:
-            await ctx.followup.send("Could not find the replied message. If no text is provided, I'll attempt to generate a rule.", ephemeral=True)
+            await ctx.followup.send("I can't find the replied message.", ephemeral=True)
             is_quoting = False
         except discord.HTTPException as e:
-            await ctx.followup.send(f"Error fetching replied message: {e}. If no text is provided, I'll attempt to generate a rule.", ephemeral=True)
+            await ctx.followup.send(f"Error fetching replied message: {e}.", ephemeral=True)
             is_quoting = False
     if not is_quoting and ctx.channel.id != RULES_CHANNEL_ID:
-        await ctx.followup.send("Regular Rod rules (non-quotes or generated) can only be created in the designated rules channel.", ephemeral=True)
+        await ctx.followup.send("Regular rod rules (non-quotes or generated) can only be created in Hephy's general.", ephemeral=True)
         return
 
     final_rule_text = rule_text
@@ -154,7 +166,7 @@ async def rod_rule(ctx: commands.Context, *, rule_text: Optional[str] = None):
         try:
             replied_message = await ctx.channel.fetch_message(ctx.message.reference.message_id)
             if replied_message.author.id == ctx.author.id:
-                await ctx.followup.send("Bro u cant just 'quote' yourself, thats not how quotes work.", ephemeral=True)
+                await ctx.followup.send("'You cannot quote your own message, thats not how quotes work.' -rod", ephemeral=True)
                 return
             if replied_message.content:
                 final_rule_text = replied_message.content
@@ -185,7 +197,7 @@ async def rod_rule(ctx: commands.Context, *, rule_text: Optional[str] = None):
         color=0xF7DC6F,
     )
 
-    selected_gif_url = random.choice(GOKU_GIFS)
+    selected_gif_url = random.choice(RULE_GIFS)
     embed.set_image(url=selected_gif_url)
 
     if quoted_author_name:
@@ -194,7 +206,7 @@ async def rod_rule(ctx: commands.Context, *, rule_text: Optional[str] = None):
         footer_source = " (Generated)" if generated else ""
         embed.set_footer(text=f"Submitted by {ctx.author.display_name}{footer_source}", icon_url=ctx.author.avatar.url)
 
-    await ctx.reply("Rod rule added successfully!", ephemeral=True)
+    await ctx.reply("New rod rule added!", ephemeral=True)
 
     for channel_id in RULE_POST_CHANNEL_IDS:
         if channel_id == ctx.channel.id:
@@ -205,7 +217,7 @@ async def rod_rule(ctx: commands.Context, *, rule_text: Optional[str] = None):
             try:
                 await channel.send(embed=embed)
             except discord.Forbidden:
-                print(f"Bot lacks permission to post rule embed in channel ID: {channel_id}")
+                print(f"Uhm, senile rod lacks permission to post rule embed in channel ID: {channel_id}")
             except Exception as e:
                 print(f"Error posting rule embed to channel ID {channel_id}: {e}")
         else:
@@ -213,6 +225,13 @@ async def rod_rule(ctx: commands.Context, *, rule_text: Optional[str] = None):
 
     
 @bot.command(name="grod", description="Ask grod if something is real!")
+    """
+    A play on Elon Musks 'Grok' twitter bot, where users can ask Grok if something is 'real' or not.
+    Grod (Grok-rod), will reply randomly, but deterministic, on whether the question is true or not.
+    As an added realism bonus for Grok, Grod now has a one in ten chance of being confused about what
+    the question has to do with a 'white genocide' in South Africa. 
+    (https://www.theguardian.com/technology/2025/may/14/elon-musk-grok-white-genocide)
+    """
 async def grod(ctx: commands.Context, *, question: str):
     normalized_question = question.strip().lower()
     seed = hash(normalized_question)
@@ -235,11 +254,17 @@ async def grod(ctx: commands.Context, *, question: str):
     
 
 @bot.hybrid_command(name="d6", description="Rolls a 6-sided die.")
+    """
+    This procedure simulates rolling a six-sided die.
+    """
 async def d6(ctx: commands.Context):
     result = random.randint(1, 6)
     await ctx.reply(f"You rolled **{result}** on a D6.")
 
 @bot.hybrid_command(name="d20", description="Rolls a 20-sided die.")
+    """
+    This procedure simulates rolling a twenty-sided die.
+    """
 async def d20(ctx: commands.Context):
     result = random.randint(1, 20)
     
@@ -254,6 +279,9 @@ async def d20(ctx: commands.Context):
     await ctx.reply(response)
 
 @bot.hybrid_command(name="gamble", description="Try your luck with the slot machine!")
+    """
+    This procedure simulates a slot machine, rod enterprises does not endorse gambling.
+    """
 async def gamble(ctx: commands.Context):
     results = random.choices(SLOT_EMOJIS, weights=SLOT_WEIGHTS, k=3)
     reel1, reel2, reel3 = results[0], results[1], results[2]
@@ -291,6 +319,9 @@ async def gamble(ctx: commands.Context):
     await ctx.reply(f"{slot_display}\n\n{message}")
     
 @bot.hybrid_command(name="winnings", description="Shows the payouts for each triple combination.")
+    """
+    This procedure shows the 'winnings' that can be made from the slot machine.
+    """
 async def winnings(ctx: commands.Context):
     winnings_list = []
     for emoji, payout in SLOT_PAYOUTS.items():
@@ -315,6 +346,9 @@ RPS_CHOICES = {
 
 @bot.hybrid_command(name="rps", description="Rod̶ck, Paper, Scissors!")
 @app_commands.describe(choice="Rock, paper, or scissors - choose wisely! :grinning:")
+    """
+    This procedure simulates playing rock, paper, scissors with senile rod.
+    """
 async def rps(ctx: commands.Context, choice: str):
     user_choice = choice.lower()
 
@@ -364,6 +398,9 @@ OP_RPS_CHOICES = {
 
 @bot.hybrid_command(name="op_rps", description="One Piece Rock, Paper, Scissors!")
 @app_commands.describe(choice="Ishi (Rock), Mori ('Paper'), or Supa ('Scissors') - choose wisely!")
+    """
+    This procedure simulates playing a one-piece themed rock, paper, scissors game with senile rod.
+    """
 async def op_rps(ctx: commands.Context, choice: str):
     user_choice = choice.lower()
 
@@ -401,8 +438,7 @@ async def op_rps(ctx: commands.Context, choice: str):
 @bot.hybrid_command(name="shirobobs-fleet", description="Shows the current and former members of ShiroBob's fleet.")
 async def shirobobs_fleet(ctx: commands.Context):
     """
-    Displays the combined content of current and former fleet members.
-    Works both as a slash and a prefix command.
+    Displays the combined crew of current and former fleet members.
     """
     if ctx.interaction:
         await ctx.interaction.response.defer()
@@ -487,6 +523,7 @@ async def crew_size(ctx: commands.Context):
         else:
             await ctx.send(error_message)
     
+   
 @tasks.loop(hours=1)
 async def send_rod_message():
     output = await run_rod_gen()
