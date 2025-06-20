@@ -8,3 +8,13 @@ json-files/
 text-files/
 
 config_data.py
+
+# vscode
+.history/
+
+# mypy
+.mypy_cache/
+__pycache__/
+
+# i only use this as a reference
+senile_rod/bot_old.py
