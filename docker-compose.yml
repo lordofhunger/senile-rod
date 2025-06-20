@@ -1,0 +1,38 @@
+services:
+  bot:
+    build:
+      context: .
+      dockerfile: DOCKERFILE
+    container_name: SenileBot
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_URL=asyncpg://postgres:postgres@db/senile_bot
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    networks:
+      - senile_network
+
+  db:
+    image: postgres:latest
+    container_name: SenileDB
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: senile_bot
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - senile_network
+
+networks:
+  senile_network:
+    driver: bridge
+
+volumes:
+  db_data:
+    driver: local
